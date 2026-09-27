@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Cuaca Sukoharjo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --surface:#f5f8fb;
+    --border:#e3e9f0;
+    --text:#12161c;
+    --muted:#6b7684;
+    --accent:#2e6f9e;
+    --accent-soft:#eaf3fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 60px;}
+
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:28px;}
+  .brand{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;letter-spacing:.2px;}
+  .brand span{color:var(--accent);}
+  .updated{font-size:12px;color:var(--muted);text-align:right;line-height:1.5;}
+
+  .hero{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:28px 26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    background:linear-gradient(180deg,#ffffff 0%,var(--surface) 100%);
+  }
+  .hero-loc{font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .hero-loc b{color:var(--text);font-weight:600;}
+  .hero-temp{font-family:'Space Grotesk',sans-serif;font-size:56px;font-weight:600;line-height:1;display:flex;align-items:flex-start;}
+  .hero-temp small{font-size:22px;font-weight:500;margin-top:4px;}
+  .hero-desc{font-size:15px;margin-top:4px;color:var(--text);}
+  .hero-icon svg{width:76px;height:76px;}
+
+  .tabs{display:flex;gap:8px;margin:26px 0 16px;}
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    border-radius:10px;
+    border:1px solid var(--border);
+    font-size:13px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    background:#fff;
+  }
+  .tab.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  .slots{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
+  .slot{
+    min-width:96px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 10px;
+    text-align:center;
+    flex:0 0 auto;
+  }
+  .slot .t{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .slot svg{width:32px;height:32px;margin-bottom:6px;}
+  .slot .v{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;}
+  .slot .d{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px;}
+  .stat{border:1px solid var(--border);border-radius:14px;padding:14px 12px;background:var(--surface);}
+  .stat .label{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .stat .val{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;}
+
+  footer{margin-top:32px;font-size:11.5px;color:var(--muted);line-height:1.6;}
+  footer a{color:var(--accent);text-decoration:none;}
+
+  .state{padding:40px 0;text-align:center;color:var(--muted);font-size:14px;}
+
+  @media(max-width:520px){
+    .hero{flex-direction:column;align-items:flex-start;}
+    .hero-icon{align-self:flex-end;margin-top:-60px;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Cuaca Sukoharjo dan sekitarnya</div>
+    <div class="updated" id="updated">Memuat data&hellip;</div>
+  </header>
+
+  <div id="content">
+    <div class="state">Mengambil data cuaca dari BMKG&hellip;</div>
+  </div>
+
+  <footer>
+    Sumber data: Badan Meteorologi, Klimatologi, dan Geofisika (BMKG) &mdash;
+    <a href="https://data.bmkg.go.id/prakiraan-cuaca" target="_blank" rel="noopener">data.bmkg.go.id</a>.
+    Prakiraan diperbarui BMKG dua kali sehari, per 3 jam.
+  </footer>
+</div>
+
+<script>
+const ADM4 = "33.11.04.1012";
+const API_URL = "https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=" + ADM4;
+
+function icon(desc){
+  const d = (desc||"").toLowerCase();
+  const stroke = "#2e6f9e";
+  if(d.includes("hujan") || d.includes("rain") || d.includes("shower")){
+    return `<svg viewBox="0 0 48 48" fill="none"><path d="M14 28a9 9 0 0 1 1-17.9A11 11 0 0 1 36 15a8 8 0 0 1-1 16H14Z" stroke="${stroke}" stroke-width="2"/><path d="M16 34l-2 6M24 34l-2 6M32 34l-2 6" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  if(d.includes("petir") || d.includes("thunder") || d.includes("storm")){
+    return `<svg viewBox="0 0 48 48" fill="none"><path d="M14 26a9 9 0 0 1 1-17.9A11 11 0 0 1 36 13a8 8 0 0 1-1 16H14Z" stroke="${stroke}" stroke-width="2"/><path d="M25 28l-6 10h6l-3 8 9-12h-6l3-6Z" fill="${stroke}"/></svg>`;
+  }
+  if(d.includes("berawan") || d.includes("cloud") || d.includes("mendung") || d.includes("overcast")){
+    return `<svg viewBox="0 0 48 48" fill="none"><path d="M14 32a9 9 0 0 1 1-17.9A11 11 0 0 1 36 19a8 8 0 0 1-1 16H14Z" stroke="${stroke}" stroke-width="2"/></svg>`;
+  }
+  if(d.includes("kabut") || d.includes("asap") || d.includes("mist") || d.includes("haze") || d.includes("fog")){
+    return `<svg viewBox="0 0 48 48" fill="none"><path d="M8 18h24M8 24h32M8 30h20M8 36h28" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  return `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="10" stroke="${stroke}" stroke-width="2"/><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9 9l4 4M35 35l4 4M9 39l4-4M35 13l4-4" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function dayLabel(dateStr, idx){
+  const names=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const d = new Date(dateStr.replace(" ","T"));
+  if(idx===0) return "Hari ini";
+  if(idx===1) return "Besok";
+  return names[d.getDay()] + " " + d.getDate() + "/" + (d.getMonth()+1);
+}
+
+function render(json){
+  const loc = json.lokasi;
+  const days = json.data[0].cuaca; // array of arrays, one per day
+
+  document.getElementById("updated").innerHTML =
+    "Diperbarui: " + new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
+
+  const now = days[0][0];
+  const heroHtml = `
+    <div class="hero">
+      <div>
+        <div class="hero-loc">${loc.desa}, ${loc.kecamatan}<br><b>${loc.kotkab}, ${loc.provinsi}</b></div>
+        <div class="hero-temp">${Math.round(now.t)}<small>&deg;C</small></div>
+        <div class="hero-desc">${now.weather_desc} &middot; Kelembapan ${now.hu}%</div>
+      </div>
+      <div class="hero-icon">${icon(now.weather_desc_en)}</div>
+    </div>
+  `;
+
+  const tabsHtml = `<div class="tabs">` +
+    days.map((day,i)=>`<div class="tab ${i===0?'active':''}" data-day="${i}">${dayLabel(day[0].local_datetime,i)}</div>`).join("") +
+    `</div>`;
+
+  const slotsFor = (i) => `<div class="slots" id="slots-${i}" style="${i===0?'':'display:none'}">` +
+    days[i].map(s=>{
+      const time = s.local_datetime.split(" ")[1].slice(0,5);
+      return `<div class="slot">
+        <div class="t">${time}</div>
+        ${icon(s.weather_desc_en)}
+        <div class="v">${Math.round(s.t)}&deg;</div>
+        <div class="d">${s.weather_desc}</div>
+      </div>`;
+    }).join("") + `</div>`;
+
+  const statsHtml = `
+    <div class="stats">
+      <div class="stat"><div class="label">Kelembapan</div><div class="val">${now.hu}%</div></div>
+      <div class="stat"><div class="label">Angin</div><div class="val">${now.ws} km/j</div></div>
+      <div class="stat"><div class="label">Tutupan awan</div><div class="val">${now.tcc}%</div></div>
+      <div class="stat"><div class="label">Jarak pandang</div><div class="val">${now.vs_text}</div></div>
+    </div>
+  `;
+
+  document.getElementById("content").innerHTML =
+    heroHtml + tabsHtml + days.map((_,i)=>slotsFor(i)).join("") + statsHtml;
+
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      tab.classList.add("active");
+      days.forEach((_,i)=>{
+        document.getElementById("slots-"+i).style.display = (String(i)===tab.dataset.day) ? "flex" : "none";
+      });
+    });
+  });
+}
+
+async function load(){
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    render(json);
+  }catch(err){
+    document.getElementById("content").innerHTML =
+      `<div class="state">Gagal memuat data cuaca (${err.message}).<br>Periksa koneksi atau coba muat ulang halaman.</div>`;
+    document.getElementById("updated").textContent = "Gagal memuat";
+  }
+}
+load();
+</script>
+</body>
+</html>
